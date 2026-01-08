@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Secret Hitler - Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --red-dark: #8B0000; --red-primary: #C41E3A; --red-light: #DC143C;
+      --blue-dark: #1a365d; --blue-primary: #2563eb; --blue-light: #3b82f6;
+      --cream: #F5E6D3; --cream-dark: #E8D4B8; --black: #1a1a1a; --gold: #DAA520;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Oswald', sans-serif;
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .screen { display: none; flex-direction: column; height: 100%; position: relative; z-index: 1; }
+    .screen.active { display: flex; }
+
+    /* JOIN SCREEN */
+    #join-screen { justify-content: center; align-items: center; padding: 2rem; text-align: center; }
+    .join-title { font-family: 'Special Elite', cursive; font-size: 2rem; color: var(--red-dark); margin-bottom: 2rem; }
+    .join-form { width: 100%; max-width: 300px; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--black); margin-bottom: 0.5rem; text-align: left; }
+    .form-input {
+      width: 100%; padding: 1rem; font-family: 'Oswald', sans-serif; font-size: 1.5rem;
+      text-align: center; text-transform: uppercase; letter-spacing: 0.2em;
+      border: 3px solid var(--black); background: var(--cream); color: var(--black);
+    }
+    .form-input:focus { outline: none; border-color: var(--red-primary); }
+    .form-input::placeholder { color: #999; text-transform: none; letter-spacing: normal; }
+    .btn {
+      font-family: 'Oswald', sans-serif; font-size: 1.2rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; padding: 1rem 2rem;
+      border: none; cursor: pointer; width: 100%; transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--red-primary); color: var(--cream); box-shadow: 0 4px 0 var(--red-dark); }
+    .btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--red-dark); }
+    .btn-secondary { background: var(--cream-dark); color: var(--black); border: 2px solid var(--black); box-shadow: 0 4px 0 #C4B59D; margin-top: 1rem; }
+    .error-message { color: var(--red-primary); font-size: 0.9rem; margin-top: 1rem; min-height: 1.5rem; }
+
+    /* LOBBY SCREEN */
+    #lobby-screen { padding: 2rem; align-items: center; justify-content: center; text-align: center; }
+    .lobby-status { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--black); margin-bottom: 1rem; }
+    .lobby-room-code { font-family: 'Special Elite', cursive; font-size: 3rem; color: var(--red-primary); margin-bottom: 2rem; }
+    .player-name-display { font-size: 1.5rem; color: var(--black); margin-bottom: 2rem; padding: 1rem 2rem; border: 2px solid var(--black); background: rgba(255,255,255,0.5); }
+    .waiting-message { font-size: 1rem; opacity: 0.7; margin-bottom: 2rem; }
+    .start-game-btn { max-width: 300px; }
+
+    /* ROLE REVEAL SCREEN */
+    #role-screen { justify-content: center; align-items: center; padding: 2rem; text-align: center; }
+    #role-screen.liberal { background: linear-gradient(135deg, var(--blue-dark) 0%, #0f172a 100%); color: var(--cream); }
+    #role-screen.fascist, #role-screen.hitler { background: linear-gradient(135deg, var(--red-dark) 0%, #450a0a 100%); color: var(--cream); }
+    .role-card { padding: 2rem; text-align: center; }
+    .role-team { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8; margin-bottom: 1rem; }
+    .role-title { font-family: 'Special Elite', cursive; font-size: 3rem; text-transform: uppercase; margin-bottom: 2rem; }
+    .role-info { font-size: 1rem; line-height: 1.8; opacity: 0.9; margin-bottom: 2rem; }
+    .known-players { margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; }
+    .known-players-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 0.5rem; }
+    .known-player { font-size: 1.1rem; padding: 0.25rem 0; }
+    .known-player.is-hitler { color: var(--gold); }
+    .hide-role-btn { background: rgba(255,255,255,0.2); color: var(--cream); border: 2px solid var(--cream); max-width: 250px; }
+
+    /* GAME SCREEN */
+    #game-screen { background: var(--black); color: var(--cream); }
+    .game-header-player {
+      padding: 1rem; background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .player-info { display: flex; align-items: center; gap: 0.75rem; }
+    .team-indicator { width: 12px; height: 12px; border-radius: 50%; }
+    .team-indicator.liberal { background: var(--blue-primary); }
+    .team-indicator.fascist { background: var(--red-primary); }
+    .your-name { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .view-role-btn {
+      font-size: 0.8rem; padding: 0.5rem 1rem; background: transparent;
+      border: 1px solid var(--cream); color: var(--cream);
+      text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
+    }
+    .game-content {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 2rem; text-align: center; overflow-y: auto;
+    }
+    .status-message { font-size: 1.2rem; opacity: 0.8; margin-bottom: 1rem; }
+    .action-title { font-family: 'Special Elite', cursive; font-size: 1.8rem; color: var(--gold); margin-bottom: 1.5rem; }
+    .action-description { font-size: 1rem; opacity: 0.8; margin-bottom: 2rem; max-width: 300px; }
+
+    /* PLAYER SELECTION */
+    .player-selection { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 300px; }
+    .player-select-btn {
+      padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+      color: var(--cream); font-family: 'Oswald', sans-serif; font-size: 1.1rem;
+      text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s ease;
+    }
+    .player-select-btn:hover, .player-select-btn:active { background: rgba(255,255,255,0.2); border-color: var(--gold); }
+
+    /* VOTING */
+    .vote-buttons { display: flex; gap: 1rem; width: 100%; max-width: 350px; }
+    .vote-btn {
+      flex: 1; padding: 2rem 1rem; font-family: 'Special Elite', cursive;
+      font-size: 2rem; border: 3px solid; cursor: pointer; transition: all 0.2s ease;
+    }
+    .vote-btn.ja { background: rgba(74, 222, 128, 0.2); border-color: #4ade80; color: #4ade80; }
+    .vote-btn.ja:active { background: rgba(74, 222, 128, 0.4); }
+    .vote-btn.nein { background: rgba(248, 113, 113, 0.2); border-color: #f87171; color: #f87171; }
+    .vote-btn.nein:active { background: rgba(248, 113, 113, 0.4); }
+    .vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* POLICY SELECTION */
+    .policy-selection { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .policy-btn {
+      width: 100px; height: 150px; border-radius: 8px; border: 3px solid;
+      font-family: 'Special Elite', cursive; font-size: 1rem; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
+    }
+    .policy-btn.liberal { background: linear-gradient(135deg, var(--blue-primary), var(--blue-dark)); border-color: var(--blue-light); color: var(--cream); }
+    .policy-btn.fascist { background: linear-gradient(135deg, var(--red-primary), var(--red-dark)); border-color: var(--red-light); color: var(--cream); }
+    .policy-btn:active { transform: scale(0.95); }
+    .veto-btn {
+      margin-top: 1.5rem; padding: 1rem 2rem; background: transparent;
+      border: 2px solid var(--gold); color: var(--gold); font-family: 'Oswald', sans-serif;
+      font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;
+    }
+
+    /* VETO DECISION */
+    .veto-buttons { display: flex; gap: 1rem; width: 100%; max-width: 350px; }
+    .veto-decision-btn {
+      flex: 1; padding: 1.5rem; font-family: 'Oswald', sans-serif; font-size: 1.2rem;
+      text-transform: uppercase; letter-spacing: 0.05em; border: 2px solid; cursor: pointer;
+    }
+    .veto-decision-btn.approve { background: rgba(74, 222, 128, 0.2); border-color: #4ade80; color: #4ade80; }
+    .veto-decision-btn.reject { background: rgba(248, 113, 113, 0.2); border-color: #f87171; color: #f87171; }
+
+    /* INVESTIGATION RESULT */
+    .investigation-result { padding: 2rem; border-radius: 8px; text-align: center; margin-bottom: 2rem; }
+    .investigation-result.liberal { background: rgba(37, 99, 235, 0.3); border: 2px solid var(--blue-primary); }
+    .investigation-result.fascist { background: rgba(196, 30, 58, 0.3); border: 2px solid var(--red-primary); }
+    .investigation-label { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: 0.5rem; }
+    .investigation-team { font-family: 'Special Elite', cursive; font-size: 2rem; text-transform: uppercase; }
+
+    /* POLICY PEEK */
+    .policy-peek-display { display: flex; gap: 0.75rem; margin-bottom: 2rem; }
+    .peek-policy {
+      width: 70px; height: 100px; border-radius: 6px; display: flex;
+      align-items: center; justify-content: center; font-size: 0.8rem;
+      text-transform: uppercase; border: 2px solid;
+    }
+    .peek-policy.liberal { background: var(--blue-primary); border-color: var(--blue-light); }
+    .peek-policy.fascist { background: var(--red-primary); border-color: var(--red-light); }
+
+    /* DEAD STATE */
+    .dead-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9); display: none; flex-direction: column;
+      justify-content: center; align-items: center; z-index: 100;
+    }
+    .dead-title { font-family: 'Special Elite', cursive; font-size: 3rem; color: var(--red-primary); margin-bottom: 1rem; }
+    .dead-message { color: var(--cream); opacity: 0.7; text-align: center; max-width: 280px; }
+
+    /* GAME OVER */
+    #gameover-screen-player { justify-content: center; align-items: center; padding: 2rem; text-align: center; }
+    #gameover-screen-player.liberal-win { background: linear-gradient(135deg, var(--blue-dark) 0%, var(--black) 100%); color: var(--cream); }
+    #gameover-screen-player.fascist-win { background: linear-gradient(135deg, var(--red-dark) 0%, var(--black) 100%); color: var(--cream); }
+    .gameover-title { font-family: 'Special Elite', cursive; font-size: 2.5rem; margin-bottom: 1rem; }
+    .gameover-reason { font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem; }
+    .your-result { font-size: 1.5rem; padding: 1rem 2rem; border: 2px solid; margin-bottom: 2rem; }
+    .your-result.won { border-color: #4ade80; color: #4ade80; }
+    .your-result.lost { border-color: #f87171; color: #f87171; }
+
+    .spectator-badge { background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; }
+    .waiting-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ROLE MODAL */
+    .role-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95); display: none; justify-content: center;
+      align-items: center; z-index: 200; padding: 2rem;
+    }
+    .role-modal.active { display: flex; }
+    .role-modal-content { text-align: center; color: var(--cream); }
+    .role-modal .role-title { font-size: 2.5rem; }
+    .close-modal-btn {
+      margin-top: 2rem; padding: 1rem 2rem; background: transparent;
+      border: 2px solid var(--cream); color: var(--cream);
+      font-family: 'Oswald', sans-serif; font-size: 1rem; text-transform: uppercase; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="join-screen" class="screen active">
+    <h1 class="join-title">Secret Hitler</h1>
+    <div class="join-form">
+      <div class="form-group">
+        <label class="form-label">Room Code</label>
+        <input type="text" id="room-code-input" class="form-input" maxlength="4" placeholder="XXXX" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" id="player-name-input" class="form-input" maxlength="12" placeholder="Enter name" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="join-btn">Join Game</button>
+      <button class="btn btn-secondary" id="spectate-btn">Watch as Spectator</button>
+      <div class="error-message" id="error-message"></div>
+    </div>
+  </div>
+
+  <div id="lobby-screen" class="screen">
+    <div class="lobby-status">Joined Room</div>
+    <div class="lobby-room-code" id="lobby-room-code">----</div>
+    <div class="player-name-display" id="player-name-display">Player</div>
+    <div class="waiting-message" id="waiting-message">Waiting for host to start...</div>
+    <button class="btn btn-primary start-game-btn" id="start-game-btn" style="display: none;">Start Game</button>
+  </div>
+
+  <div id="role-screen" class="screen">
+    <div class="role-card">
+      <div class="role-team" id="role-team">Your Team</div>
+      <div class="role-title" id="role-title">Role</div>
+      <div class="role-info" id="role-info"></div>
+      <div class="known-players" id="known-players" style="display: none;">
+        <div class="known-players-title">Your Teammates</div>
+        <div id="known-players-list"></div>
+      </div>
+      <button class="btn hide-role-btn" id="hide-role-btn">I'm Ready</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="screen">
+    <div class="game-header-player">
+      <div class="player-info">
+        <div class="team-indicator" id="team-indicator"></div>
+        <div class="your-name" id="your-name">Player</div>
+      </div>
+      <button class="view-role-btn" id="view-role-btn">View Role</button>
+    </div>
+    <div class="game-content" id="game-content">
+      <div class="status-message">Waiting for game to begin...</div>
+    </div>
+  </div>
+
+  <div id="gameover-screen-player" class="screen">
+    <div class="gameover-title" id="gameover-title">Game Over</div>
+    <div class="gameover-reason" id="gameover-reason">Reason</div>
+    <div class="your-result" id="your-result">Result</div>
+  </div>
+
+  <div class="role-modal" id="role-modal">
+    <div class="role-modal-content">
+      <div class="role-team" id="modal-role-team">Team</div>
+      <div class="role-title" id="modal-role-title">Role</div>
+      <div id="modal-known-players"></div>
+      <button class="close-modal-btn" id="close-modal-btn">Close</button>
+    </div>
+  </div>
+
+  <div class="dead-overlay" id="dead-overlay">
+    <div class="dead-title">☠ EXECUTED ☠</div>
+    <div class="dead-message">You have been executed. You may watch but cannot participate.</div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let playerId = null, playerName = '', roomCode = '', myRole = null, myTeam = null, knownInfo = null, isSpectator = false, playerCount = 0;
+
+    setInterval(() => socket.emit('ping'), 25000);
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showError(msg) { document.getElementById('error-message').textContent = msg; }
+    function updateGameContent(html) { document.getElementById('game-content').innerHTML = html; }
+
+    document.getElementById('join-btn').addEventListener('click', () => joinGame(false));
+    document.getElementById('spectate-btn').addEventListener('click', () => joinGame(true));
+    document.getElementById('room-code-input').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase(); });
+
+    function joinGame(asSpectator) {
+      roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+      playerName = document.getElementById('player-name-input').value.trim();
+      if (!roomCode || roomCode.length !== 4) return showError('Enter a 4-letter room code');
+      if (!playerName) return showError('Enter your name');
+
+      socket.emit('join-room', { roomCode, playerName, isSpectator: asSpectator }, (res) => {
+        if (res.error) return showError(res.error);
+        playerId = res.playerId;
+        isSpectator = res.isSpectator;
+        document.getElementById('lobby-room-code').textContent = roomCode;
+        document.getElementById('player-name-display').textContent = playerName + (isSpectator ? ' (Spectator)' : '');
+        if (res.reconnected) {
+          myRole = res.role; myTeam = res.team;
+          setupGameScreen();
+          showScreen('game-screen');
+        } else {
+          showScreen('lobby-screen');
+        }
+      });
+    }
+
+    socket.on('player-joined', (data) => {
+      const active = data.players.filter(p => !p.isSpectator);
+      playerCount = active.length;
+      if (playerCount >= 5 && !isSpectator) {
+        document.getElementById('start-game-btn').style.display = 'block';
+        document.getElementById('waiting-message').textContent = `${playerCount} players ready!`;
+      } else {
+        document.getElementById('start-game-btn').style.display = 'none';
+        document.getElementById('waiting-message').textContent = `Need ${Math.max(0, 5 - playerCount)} more players...`;
+      }
+    });
+
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+      socket.emit('start-game', (res) => { if (res.error) alert(res.error); });
+    });
+
+    socket.on('game-started', (data) => {
+      if (data.isSpectator) {
+        isSpectator = true;
+        setupGameScreen();
+        showScreen('game-screen');
+        updateGameContent('<div class="spectator-badge">Spectator Mode</div><div class="status-message">Watching the game...</div>');
+        return;
+      }
+      myRole = data.role; myTeam = data.team; knownInfo = data.knownInfo; playerCount = data.playerCount;
+      const rs = document.getElementById('role-screen');
+      rs.className = `screen active ${myRole}`;
+      document.getElementById('role-team').textContent = myTeam === 'liberal' ? 'Liberal Team' : 'Fascist Team';
+      document.getElementById('role-title').textContent = myRole === 'hitler' ? 'Secret Hitler' : myRole.charAt(0).toUpperCase() + myRole.slice(1);
+      let info = myRole === 'liberal' ? 'You are a Liberal. Enact 5 Liberal policies or kill Hitler.' :
+                 myRole === 'fascist' ? 'You are a Fascist. Enact 6 Fascist policies or get Hitler elected.' :
+                 'You are Hitler. Act Liberal. Get elected Chancellor after 3 Fascist policies to win!';
+      document.getElementById('role-info').textContent = info;
+      if (knownInfo?.fascists?.length) {
+        document.getElementById('known-players').style.display = 'block';
+        document.getElementById('known-players-list').innerHTML = knownInfo.fascists.map(f =>
+          `<div class="known-player ${f.isHitler ? 'is-hitler' : ''}">${f.name}${f.isHitler ? ' (Hitler)' : ''}</div>`
+        ).join('');
+      } else {
+        document.getElementById('known-players').style.display = 'none';
+      }
+      showScreen('role-screen');
+    });
+
+    document.getElementById('hide-role-btn').addEventListener('click', () => { setupGameScreen(); showScreen('game-screen'); });
+
+    function setupGameScreen() {
+      document.getElementById('your-name').textContent = playerName;
+      document.getElementById('team-indicator').className = `team-indicator ${myTeam || ''}`;
+      if (isSpectator) document.getElementById('view-role-btn').style.display = 'none';
+    }
+
+    document.getElementById('view-role-btn').addEventListener('click', () => {
+      document.getElementById('modal-role-team').textContent = myTeam === 'liberal' ? 'Liberal' : 'Fascist';
+      document.getElementById('modal-role-title').textContent = myRole === 'hitler' ? 'Secret Hitler' : myRole;
+      document.getElementById('modal-known-players').innerHTML = knownInfo?.fascists ?
+        '<div class="known-players"><div class="known-players-title">Teammates</div>' +
+        knownInfo.fascists.map(f => `<div class="known-player ${f.isHitler ? 'is-hitler' : ''}">${f.name}${f.isHitler ? ' (Hitler)' : ''}</div>`).join('') + '</div>' : '';
+      document.getElementById('role-modal').classList.add('active');
+    });
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => {
+      document.getElementById('role-modal').classList.remove('active');
+    });
+
+    socket.on('your-turn', (data) => {
+      switch(data.action) {
+        case 'nominate-chancellor': showChancellorNomination(data.eligiblePlayers); break;
+        case 'vote': showVoting(data.president, data.chancellor); break;
+        case 'discard-policy': showPolicyDiscard(data.policies); break;
+        case 'enact-policy': showPolicyEnact(data.policies, data.vetoEnabled); break;
+        case 'veto-decision': showVetoDecision(); break;
+        case 'investigate': showPlayerAction('Investigate Loyalty', 'See their party membership.', data.eligiblePlayers, 'investigate'); break;
+        case 'special-election': showPlayerAction('Special Election', 'Choose the next President.', data.eligiblePlayers, 'special-election'); break;
+        case 'policy-peek':
+          socket.emit('executive-action', { action: 'policy-peek', targetId: null }, (res) => {
+            if (res.result) {
+              updateGameContent(`<div class="action-title">Policy Peek</div><div class="action-description">Next 3 policies:</div>
+                <div class="policy-peek-display">${res.result.policies.map(p => `<div class="peek-policy ${p}">${p}</div>`).join('')}</div>
+                <div class="status-message">Remember this!</div>`);
+            }
+          });
+          break;
+        case 'execution': showPlayerAction('Execution', 'Choose someone to execute.', data.eligiblePlayers, 'execution'); break;
+      }
+    });
+
+    function showChancellorNomination(players) {
+      updateGameContent(`<div class="action-title">Nominate Chancellor</div>
+        <div class="action-description">Choose your Chancellor.</div>
+        <div class="player-selection">${players.map(p => `<button class="player-select-btn" data-id="${p.id}">${p.name}</button>`).join('')}</div>`);
+      document.querySelectorAll('.player-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          socket.emit('nominate-chancellor', { chancellorId: btn.dataset.id }, (res) => {
+            if (res.error) alert(res.error);
+            else updateGameContent('<div class="waiting-spinner"></div><div class="status-message">Waiting for votes...</div>');
+          });
+        });
+      });
+    }
+
+    function showVoting(president, chancellor) {
+      updateGameContent(`<div class="action-title">Vote!</div>
+        <div class="action-description">${president} → ${chancellor}</div>
+        <div class="vote-buttons"><button class="vote-btn ja">JA!</button><button class="vote-btn nein">NEIN</button></div>`);
+      document.querySelector('.vote-btn.ja').addEventListener('click', () => castVote('ja'));
+      document.querySelector('.vote-btn.nein').addEventListener('click', () => castVote('nein'));
+    }
+
+    function castVote(vote) {
+      socket.emit('cast-vote', { vote }, (res) => {
+        if (res.error) alert(res.error);
+        else {
+          document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+          updateGameContent('<div class="waiting-spinner"></div><div class="status-message">Waiting for others...</div>');
+        }
+      });
+    }
+
+    socket.on('vote-results', (data) => {
+      const myVote = data.votes.find(v => v.id === playerId);
+      updateGameContent(`<div class="action-title">${data.passed ? 'Passed!' : 'Failed!'}</div>
+        <div class="status-message">You voted ${myVote ? myVote.vote.toUpperCase() : '?'}</div>`);
+    });
+
+    function showPolicyDiscard(policies) {
+      updateGameContent(`<div class="action-title">Discard One</div>
+        <div class="action-description">Discard one. Two go to Chancellor.</div>
+        <div class="policy-selection">${policies.map((p, i) => `<button class="policy-btn ${p}" data-index="${i}">${p}</button>`).join('')}</div>`);
+      document.querySelectorAll('.policy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          socket.emit('president-discard', { discardIndex: parseInt(btn.dataset.index) }, (res) => {
+            if (res.error) alert(res.error);
+            else updateGameContent('<div class="waiting-spinner"></div><div class="status-message">Waiting for Chancellor...</div>');
+          });
+        });
+      });
+    }
+
+    function showPolicyEnact(policies, vetoEnabled) {
+      updateGameContent(`<div class="action-title">Enact Policy</div>
+        <div class="action-description">Choose one to enact.</div>
+        <div class="policy-selection">${policies.map((p, i) => `<button class="policy-btn ${p}" data-index="${i}">${p}</button>`).join('')}</div>
+        ${vetoEnabled ? '<button class="veto-btn" id="request-veto">Request Veto</button>' : ''}`);
+      document.querySelectorAll('.policy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          socket.emit('chancellor-action', { action: 'enact', enactIndex: parseInt(btn.dataset.index) }, (res) => {
+            if (res.error) alert(res.error);
+            else updateGameContent('<div class="status-message">Policy enacted!</div>');
+          });
+        });
+      });
+      if (vetoEnabled) {
+        document.getElementById('request-veto').addEventListener('click', () => {
+          socket.emit('chancellor-action', { action: 'veto' }, (res) => {
+            if (res.error) alert(res.error);
+            else updateGameContent('<div class="waiting-spinner"></div><div class="status-message">Veto requested...</div>');
+          });
+        });
+      }
+    }
+
+    function showVetoDecision() {
+      updateGameContent(`<div class="action-title">Veto Requested!</div>
+        <div class="action-description">Chancellor wants to veto. Agree?</div>
+        <div class="veto-buttons"><button class="veto-decision-btn approve">Approve</button><button class="veto-decision-btn reject">Reject</button></div>`);
+      document.querySelector('.approve').addEventListener('click', () => {
+        socket.emit('veto-decision', { approve: true }, () => updateGameContent('<div class="status-message">Veto approved.</div>'));
+      });
+      document.querySelector('.reject').addEventListener('click', () => {
+        socket.emit('veto-decision', { approve: false }, () => updateGameContent('<div class="status-message">Veto rejected.</div>'));
+      });
+    }
+
+    function showPlayerAction(title, desc, players, action) {
+      updateGameContent(`<div class="action-title">${title}</div>
+        <div class="action-description">${desc}</div>
+        <div class="player-selection">${players.map(p => `<button class="player-select-btn" data-id="${p.id}" data-name="${p.name}">${p.name}</button>`).join('')}</div>`);
+      document.querySelectorAll('.player-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (action === 'execution' && !confirm(`Execute ${btn.dataset.name}?`)) return;
+          socket.emit('executive-action', { action, targetId: btn.dataset.id }, (res) => {
+            if (res.error) return alert(res.error);
+            if (action === 'investigate' && res.result) {
+              updateGameContent(`<div class="action-title">Result</div>
+                <div class="investigation-result ${res.result.team}">
+                  <div class="investigation-label">${btn.dataset.name} is</div>
+                  <div class="investigation-team">${res.result.team}</div>
+                </div><div class="status-message">You may lie about this.</div>`);
+            } else {
+              updateGameContent('<div class="status-message">Done!</div>');
+            }
+          });
+        });
+      });
+    }
+
+    socket.on('you-were-executed', () => { document.getElementById('dead-overlay').style.display = 'flex'; });
+
+    socket.on('game-over', (data) => {
+      const screen = document.getElementById('gameover-screen-player');
+      screen.className = `screen active ${data.winner}-win`;
+      document.getElementById('gameover-title').textContent = data.winner === 'liberal' ? 'LIBERALS WIN!' : 'FASCISTS WIN!';
+      document.getElementById('gameover-reason').textContent = data.reason;
+      const won = myTeam === data.winner;
+      const r = document.getElementById('your-result');
+      r.textContent = won ? 'YOU WON!' : 'YOU LOST';
+      r.className = `your-result ${won ? 'won' : 'lost'}`;
+      showScreen('gameover-screen-player');
+      document.getElementById('dead-overlay').style.display = 'none';
+    });
+
+    socket.on('return-to-lobby', () => {
+      myRole = null; myTeam = null; knownInfo = null;
+      document.getElementById('dead-overlay').style.display = 'none';
+      showScreen('lobby-screen');
+    });
+
+    socket.on('host-disconnected', () => { alert('Host disconnected.'); location.reload(); });
+  </script>
+</body>
+</html>
