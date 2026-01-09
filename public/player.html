@@ -312,6 +312,11 @@
           myRole = res.role; myTeam = res.team;
           setupGameScreen();
           showScreen('game-screen');
+          // Show dead overlay if player was executed
+          if (res.alive === false) {
+            document.getElementById('dead-overlay').style.display = 'flex';
+          }
+          updateGameContent('<div class="status-message">Reconnected! Waiting...</div>');
         } else {
           showScreen('lobby-screen');
         }

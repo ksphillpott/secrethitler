@@ -692,6 +692,7 @@
     <div class="winner-announcement" id="winner-text">LIBERALS WIN</div>
     <div class="win-reason" id="win-reason">Five Liberal Policies enacted!</div>
     <div class="final-roles" id="final-roles"></div>
+    <button class="btn btn-primary" id="play-again-btn" style="margin-top: 2rem; padding: 1rem 3rem; font-size: 1.5rem; background: var(--gold); color: var(--black);">Play Again</button>
   </div>
 
   <!-- Policy Reveal Animation -->
@@ -1110,6 +1111,21 @@
         if (el) el.textContent = power || '';
       });
     }
+
+    // Play again button
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      socket.emit('play-again');
+    });
+
+    socket.on('return-to-lobby', () => {
+      showScreen('lobby-screen');
+      players.forEach(p => { p.alive = true; p.team = null; p.role = null; });
+      currentPresident = null;
+      currentChancellor = null;
+      document.getElementById('action-log').innerHTML = '';
+      updatePolicyTracks(0, 0);
+      updateElectionTracker(0);
+    });
 
     setupPowerTrack(7);
   </script>
